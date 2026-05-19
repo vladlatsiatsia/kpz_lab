@@ -1,0 +1,70 @@
+using System;
+using System.Text;
+
+namespace Lab4_Strategy
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+
+            
+            var networkImg = new LightImage("https://dovidka.biz.ua/zagadka-pro-sobaku-dlya-ditey/", new NetworkLoadStrategy());
+            networkImg.Load();
+
+            var localImg = new LightImage("C:/Users/Admin/Pictures/dog_photo.jpg", new FileSystemLoadStrategy());
+            localImg.Load();
+
+            Console.ReadKey();
+        }
+    }
+
+    public interface IImageLoadStrategy
+    {
+        void Load(string href);
+    }
+
+    public class NetworkLoadStrategy : IImageLoadStrategy
+    {
+        public void Load(string href)
+        {
+            Console.WriteLine($"[Мережа] Завантаження зображення за URL-адресою: {href}");
+        }
+    }
+
+    public class FileSystemLoadStrategy : IImageLoadStrategy
+    {
+        public void Load(string href)
+        {
+            Console.WriteLine($"[Файлова система] Читання файлу з локального диска: {href}");
+        }
+    }
+
+    public abstract class LightNode
+    {
+        public abstract string OuterHTML();
+    }
+
+    public class LightImage : LightNode
+    {
+        private string _href;
+        private IImageLoadStrategy _loadStrategy;
+
+        public LightImage(string href, IImageLoadStrategy strategy)
+        {
+            _href = href;
+            _loadStrategy = strategy;
+        }
+
+        public void Load()
+        {
+            _loadStrategy.Load(_href);
+        }
+
+        public override string OuterHTML()
+        {
+            return $"<img src=\"{_href}\" />";
+        }
+    }
+}
