@@ -16,40 +16,20 @@ namespace Lab3_Composite
             tr.AddChild(th);
             table.AddChild(tr);
 
-            Console.WriteLine("--- Тест Шаблонного Методу (Рендер з хуками) ---");
-            string html = table.OuterRender(); 
-            Console.WriteLine(html);
-
-            Console.WriteLine("\n--- Тест Visitor ---");
-            var visitor = new ElementCounterVisitor();
-            table.Accept(visitor);
-            Console.WriteLine($"Всього HTML-тегів знайдено: {visitor.Count}");
+            Console.WriteLine("--- Тест Ітератора (Обхід в глибину) ---");
+            foreach (var node in table.GetDepthFirstIterator())
+            {
+                Console.WriteLine($"Знайдено вузол типу: {node.GetType().Name}");
+            }
         }
     }
 
-    public interface IVisitor
-    {
-        void VisitTextNode(LightTextNode node);
-        void VisitElementNode(LightElementNode node);
-    }
-
-    public class ElementCounterVisitor : IVisitor
-    {
-        public int Count { get; private set; }
-        public void VisitTextNode(LightTextNode node) { }
-        public void VisitElementNode(LightElementNode node) => Count++;
-    }
+    public interface IVisitor { void VisitTextNode(LightTextNode node); void VisitElementNode(LightElementNode node); }
+    public class ElementCounterVisitor : IVisitor { public int Count { get; private set; } public void VisitTextNode(LightTextNode node) { } public void VisitElementNode(LightElementNode node) => Count++; }
 
     public abstract class LightNode
     {
-        // Шаблонний метод
-        public string OuterRender()
-        {
-            OnCreated();
-            string result = Render();
-            OnTextRendered();
-            return result;
-        }
+        public string OuterRender() { OnCreated(); string result = Render(); OnTextRendered(); return result; }
         protected virtual void OnCreated() { }
         protected virtual void OnTextRendered() { }
         public abstract string Render();
@@ -71,24 +51,22 @@ namespace Lab3_Composite
         public LightElementNode(string tag, string display, string closing) => _tagName = tag;
         public void AddChild(LightNode node) => _children.Add(node);
 
-        protected override void OnCreated()
+        // РЕАЛІЗАЦІЯ ІТЕРАТОРА (DFS)
+        public IEnumerable<LightNode> GetDepthFirstIterator()
         {
-            Console.WriteLine($"[Hook]: <{_tagName}> ініціалізовано.");
+            yield return this;
+            foreach (var child in _children)
+            {
+                if (child is LightElementNode elementChild)
+                {
+                    foreach (var subChild in elementChild.GetDepthFirstIterator()) yield return subChild;
+                }
+                else yield return child;
+            }
         }
 
-        public override string Render()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append($"<{_tagName}>");
-            foreach (var child in _children) sb.Append(child.OuterRender());
-            sb.Append($"</{_tagName}>");
-            return sb.ToString();
-        }
-
-        public override void Accept(IVisitor visitor)
-        {
-            visitor.VisitElementNode(this);
-            foreach (var child in _children) child.Accept(visitor);
-        }
+        protected override void OnCreated() => Console.WriteLine($"[Hook]: <{_tagName}> ініціалізовано.");
+        public override string Render() { StringBuilder sb = new StringBuilder(); sb.Append($"<{_tagName}>"); foreach (var child in _children) sb.Append(child.OuterRender()); sb.Append($"</{_tagName}>"); return sb.ToString(); }
+        public override void Accept(IVisitor visitor) { visitor.VisitElementNode(this); foreach (var child in _children) child.Accept(visitor); }
     }
 }
