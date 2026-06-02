@@ -1,0 +1,85 @@
+using System;
+using System.Collections.Generic;
+
+namespace Lab4_Observer
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+           
+            var button = new LightElementNode("button", "inline", "double");
+
+           
+            button.AddEventListener("click", (eventName) => {
+                Console.WriteLine("Логгер: Виявлено натискання на елемент.");
+            });
+
+            button.AddEventListener("click", (eventName) => {
+                Console.WriteLine("Аналітика: Відправлено дані про клік на сервер.");
+            });
+
+     
+            button.AddEventListener("mouseover", (eventName) => {
+                Console.WriteLine("Інтерфейс: Колір елемента змінено при наведенні.");
+            });
+
+        
+            Console.WriteLine("Симуляція натискання");
+            button.TriggerEvent("click");
+
+            Console.WriteLine("\nСимуляція наведення ");
+            button.TriggerEvent("mouseover");
+
+            Console.ReadKey();
+        }
+    }
+
+    public abstract class LightNode
+    {
+        public abstract string OuterHTML();
+    }
+
+    public class LightElementNode : LightNode
+    {
+        private string _tagName;
+        private string _displayType;
+        private string _closingType;
+
+   
+        private Dictionary<string, List<Action<string>>> _eventListeners = new Dictionary<string, List<Action<string>>>();
+
+        public LightElementNode(string tag, string display, string closing)
+        {
+            _tagName = tag;
+            _displayType = display;
+            _closingType = closing;
+        }
+
+    
+        public void AddEventListener(string eventType, Action<string> handler)
+        {
+            if (!_eventListeners.ContainsKey(eventType))
+            {
+                _eventListeners[eventType] = new List<Action<string>>();
+            }
+            _eventListeners[eventType].Add(handler);
+        }
+
+       
+        public void TriggerEvent(string eventType)
+        {
+            if (_eventListeners.ContainsKey(eventType))
+            {
+                foreach (var handler in _eventListeners[eventType])
+                {
+                    handler.Invoke(eventType);
+                }
+            }
+        }
+
+        public override string OuterHTML() => $"<{_tagName}></{_tagName}>";
+    }
+}
